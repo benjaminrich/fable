@@ -39,9 +39,9 @@ render.npct <- function(x, pct, .default="") {
 }
 
 
-#' The mythical formated table generator.
+#' The mythical formatted table generator.
 #'
-#' Creates formated HTML tables of in a flexible, convenient way.
+#' Creates formatted HTML tables of in a flexible, convenient way.
 #'
 #' @param x An object.
 #' @param data A data.frame.

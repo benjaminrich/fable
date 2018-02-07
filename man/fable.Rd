@@ -6,7 +6,7 @@
 \alias{fable.formula}
 \alias{fable.numeric}
 \alias{fable.ftable}
-\title{The mythical formated table generator.}
+\title{The mythical formatted table generator.}
 \usage{
 fable(x, ...)
 
@@ -64,7 +64,7 @@ HTML is output to the console.}
 None (invisible \code{NULL}). Called for its side effects.
 }
 \description{
-Creates formated HTML tables of in a flexible, convenient way.
+Creates formatted HTML tables of in a flexible, convenient way.
 }
 \section{Methods (by class)}{
 \itemize{
