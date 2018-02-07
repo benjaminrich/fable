@@ -1,0 +1,13 @@
+Package: fable
+Type: Package
+Version: 0.1
+Date: 2018-02-04
+Title: The mythical formated table generator
+Authors@R: person("Benjamin", "Rich", role=c("aut", "cre"), email="mail@benjaminrich.net")
+Description: Creates formated HTML tables of in a flexible, convenient way.
+License: GPL-2
+Depends: Formula
+Imports: stats
+Suggests: knitr
+VignetteBuilder: knitr
+RoxygenNote: 6.0.1
