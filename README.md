@@ -1,5 +1,11 @@
 # fable - an R package
-Once upon a time there lived a king and queen who loved R very much. Until one day, they wanted to produce nice formatted tables...
+
+fa·ble
+/ˈfābəl/
+
+*noun*
+
+- a story, typically a supernatural one incorporating elements of myth and legend.
 
 To install directly from GitHub:
 
