@@ -11,13 +11,13 @@
 fable(x, ...)
 
 \method{fable}{data.frame}(x, value, facets, ..., render,
-  expand.along = c("rows", "columns"), lab)
+  expand.along = c("rows", "columns"), collapse.cells = TRUE, lab)
 
 \method{fable}{formula}(x, data, ..., render, expand.along = c("rows",
-  "columns"), lab)
+  "columns"), collapse.cells = TRUE, lab)
 
 \method{fable}{numeric}(x, rowvars, colvars, ..., render,
-  expand.along = c("rows", "columns"), lab)
+  expand.along = c("rows", "columns"), collapse.cells = TRUE, lab)
 
 \method{fable}{ftable}(x, text = matrix(as.character(x), nrow(x)),
   drop = c("both", "rows", "columns", "none"), collapse.cells = TRUE, lab,
@@ -39,6 +39,9 @@ splitting the data.}
 \item{expand.along}{Specify the direction to expand the table when render
 returns a (named) vector.}
 
+\item{collapse.cells}{If \code{TRUE} (the default), row/column header cells
+will be collapsed (merged) where appropriate.}
+
 \item{lab}{Specify the contents of an extra table cell spanning
 over all column labels.}
 
@@ -52,9 +55,6 @@ over all column labels.}
 
 \item{drop}{If \code{TRUE} (the default), rows and columns with zero counts
 will be dropped.}
-
-\item{collapse.cells}{If \code{TRUE} (the default), row/column header cells
-will be collapsed (merged) where appropriate.}
 
 \item{standalone}{If true, a standalone document containing the table output
 is generated displayed in the default viewer/browser. If false, generated
@@ -84,7 +84,18 @@ fable(mpg ~ gear | cyl, data=mtcars, lab="Cylinders")
 fable(rownames(mtcars) ~ gear | cyl, data=mtcars,
   render=paste, collapse="<br/>", lab="Cylinders")
 
-fable(decrease ~ treatment + rowpos + colpos, data=OrchardSprays)
+fable(decrease ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
+
+r <- function(x) sprintf("\%0.3g (\%0.3g)", mean(x), sd(x))
+fable(len ~ dose | supp, data=ToothGrowth, lab="Mean (SD)",
+  render=r)
+
+r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
+fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
+  render=r)
+
+fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
+  render=r, expand.along="columns")
 
 }
 \keyword{utilities}

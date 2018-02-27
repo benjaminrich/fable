@@ -74,7 +74,18 @@ render.npct <- function(x, pct, .default="") {
 #' fable(rownames(mtcars) ~ gear | cyl, data=mtcars,
 #'   render=paste, collapse="<br/>", lab="Cylinders")
 #'
-#' fable(decrease ~ treatment + rowpos + colpos, data=OrchardSprays)
+#' fable(decrease ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
+#'
+#' r <- function(x) sprintf("%0.3g (%0.3g)", mean(x), sd(x))
+#' fable(len ~ dose | supp, data=ToothGrowth, lab="Mean (SD)",
+#'   render=r)
+#'
+#' r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
+#' fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
+#'   render=r)
+#'
+#' fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
+#'   render=r, expand.along="columns")
 #'
 #' @keywords utilities
 #' @export
@@ -86,7 +97,7 @@ fable <- function(x, ...) {
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows", "columns"), lab) {
+fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows", "columns"), collapse.cells=TRUE, lab) {
     if (missing(value) && missing(facets)) {
         value <- unlist(as.list(format(x)))
         eg <- expand.grid(rownames(x), colnames(x))
@@ -109,14 +120,14 @@ fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows
         colvars <- model.part(f, data=m, rhs=1, drop=F)
     }
 
-    fable.numeric(value, rowvars, colvars, render=render, expand.along=expand.along, lab=lab, ...)
+    fable.numeric(value, rowvars, colvars, render=render, expand.along=expand.along, collapse.cells=collapse.cells, lab=lab, ...)
 }
 
 #' @describeIn fable The \code{formula} method.
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"), lab) {
+fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"), collapse.cells=TRUE, lab) {
     f <- Formula(x)
     m <- model.frame(f, data=data, na.action=na.pass)
     x <- model.part(f, data=m, lhs=1, drop=T)
@@ -131,13 +142,13 @@ fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"
         }
     }
 
-    fable.numeric(x, rowvars, colvars, render=render, expand.along=expand.along, lab=lab, ...)
+    fable.numeric(x, rowvars, colvars, render=render, expand.along=expand.along, collapse.cells=collapse.cells, lab=lab, ...)
 }
 
 #' @describeIn fable The \code{numeric} method.
 #' @export
 #' @importFrom stats setNames ftable
-fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows", "columns"), lab) {
+fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows", "columns"), collapse.cells=TRUE, lab) {
 
     expand.along <- match.arg(expand.along)
 
@@ -190,7 +201,7 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows
     attributes(counts) <- a
     attributes(text) <- a
 
-    fable.ftable(counts, text=text, lab=lab)
+    fable.ftable(counts, text=text, collapse.cells=collapse.cells, lab=lab)
 }
 
 #' @describeIn fable The \code{ftable} method.
