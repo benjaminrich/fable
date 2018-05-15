@@ -103,10 +103,12 @@ fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows
         eg <- expand.grid(rownames(x), colnames(x))
         rowvars <- eg[, 1, drop=F]
         colvars <- eg[, 2, drop=F]
-        names(rowvars) <- " " # Avoid displaying anything in the row label header
-        if (missing(lab)) {
-            lab <- NULL
+        if (is.null(lab) || missing(lab)) {
+            names(rowvars) <- " " # Avoid displaying anything in the row label header
+        } else {
+            names(rowvars) <- lab # In this case use lab for row label header instead
         }
+        lab <- NULL
     } else if (missing(value)) {
         stop("Cannot specify facets without value")
     } else if (missing(facets)) {
