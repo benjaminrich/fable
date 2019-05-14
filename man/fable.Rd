@@ -90,7 +90,11 @@ fable(mpg ~ gear | cyl, data=mtcars, lab="Cylinders")
 fable(rownames(mtcars) ~ gear | cyl, data=mtcars,
   render=paste, collapse="<br/>", lab="Cylinders")
 
-fable(decrease ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
+fable(treatment ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
+fable(paste(treatment, decrease, sep="<br/>") ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
+r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
+fable(decrease ~ treatment, data=OrchardSprays, render=r, expand.along="rows")
+fable(decrease ~ treatment, data=OrchardSprays, render=r, expand.along="columns")
 
 r <- function(x) sprintf("\%0.3g (\%0.3g)", mean(x), sd(x))
 fable(len ~ dose | supp, data=ToothGrowth, lab="Mean (SD)",
