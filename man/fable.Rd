@@ -11,17 +11,23 @@
 fable(x, ...)
 
 \method{fable}{data.frame}(x, value, facets, ..., render,
-  expand.along = c("rows", "columns"), collapse.cells = TRUE, lab)
+  expand.along = c("rows", "columns"), drop = c("both", "rows",
+  "columns", "none"), collapse.cells = TRUE, lab,
+  standalone = !isTRUE(getOption("knitr.in.progress")))
 
 \method{fable}{formula}(x, data, ..., render, expand.along = c("rows",
-  "columns"), collapse.cells = TRUE, lab)
+  "columns"), drop = c("both", "rows", "columns", "none"),
+  collapse.cells = TRUE, lab,
+  standalone = !isTRUE(getOption("knitr.in.progress")))
 
 \method{fable}{numeric}(x, rowvars, colvars, ..., render,
-  expand.along = c("rows", "columns"), collapse.cells = TRUE, lab)
+  expand.along = c("rows", "columns"), drop = c("both", "rows",
+  "columns", "none"), collapse.cells = TRUE, lab,
+  standalone = !isTRUE(getOption("knitr.in.progress")))
 
 \method{fable}{ftable}(x, text = matrix(as.character(x), nrow(x)),
-  drop = c("both", "rows", "columns", "none"), collapse.cells = TRUE, lab,
-  standalone = !isTRUE(getOption("knitr.in.progress")), ...)
+  drop = c("both", "rows", "columns", "none"), collapse.cells = TRUE,
+  lab, standalone = !isTRUE(getOption("knitr.in.progress")))
 }
 \arguments{
 \item{x}{An object.}
@@ -39,11 +45,18 @@ splitting the data.}
 \item{expand.along}{Specify the direction to expand the table when render
 returns a (named) vector.}
 
+\item{drop}{If \code{TRUE} (the default), rows and columns with zero counts
+will be dropped.}
+
 \item{collapse.cells}{If \code{TRUE} (the default), row/column header cells
 will be collapsed (merged) where appropriate.}
 
 \item{lab}{Specify the contents of an extra table cell spanning
 over all column labels.}
+
+\item{standalone}{If true, a standalone document containing the table output
+is generated displayed in the default viewer/browser. If false, generated
+HTML is output to the console.}
 
 \item{data}{A data.frame.}
 
@@ -52,13 +65,6 @@ over all column labels.}
 \item{colvars}{A list of column variables for splitting the data.}
 
 \item{text}{A character matrix containing the textual content of each table cell.}
-
-\item{drop}{If \code{TRUE} (the default), rows and columns with zero counts
-will be dropped.}
-
-\item{standalone}{If true, a standalone document containing the table output
-is generated displayed in the default viewer/browser. If false, generated
-HTML is output to the console.}
 }
 \value{
 None (invisible \code{NULL}). Called for its side effects.

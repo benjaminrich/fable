@@ -57,13 +57,13 @@ render.npct <- function(x, pct, .default="") {
 #' @param text A character matrix containing the textual content of each table cell.
 #' @param drop If \code{TRUE} (the default), rows and columns with zero counts
 #' will be dropped.
+#' @param collapse.cells If \code{TRUE} (the default), row/column header cells
+#' will be collapsed (merged) where appropriate.
 #' @param lab Specify the contents of an extra table cell spanning
 #' over all column labels.
 #' @param standalone If true, a standalone document containing the table output
 #' is generated displayed in the default viewer/browser. If false, generated
 #' HTML is output to the console.
-#' @param collapse.cells If \code{TRUE} (the default), row/column header cells
-#' will be collapsed (merged) where appropriate.
 #' @param ... Additional arguments passed to \code{render}.
 #' @return None (invisible \code{NULL}). Called for its side effects.
 #'
@@ -97,7 +97,7 @@ fable <- function(x, ...) {
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows", "columns"), collapse.cells=TRUE, lab) {
+fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
     if (missing(value) && missing(facets)) {
         value <- unlist(as.list(format(x)))
         eg <- expand.grid(rownames(x), colnames(x))
@@ -122,14 +122,14 @@ fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows
         colvars <- model.part(f, data=m, rhs=1, drop=F)
     }
 
-    fable.numeric(value, rowvars, colvars, render=render, expand.along=expand.along, collapse.cells=collapse.cells, lab=lab, ...)
+    fable.numeric(value, rowvars, colvars, render=render, expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, lab=lab, standalone=standalone, ...)
 }
 
 #' @describeIn fable The \code{formula} method.
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"), collapse.cells=TRUE, lab) {
+fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
     f <- Formula(x)
     m <- model.frame(f, data=data, na.action=na.pass)
     x <- model.part(f, data=m, lhs=1, drop=T)
@@ -139,18 +139,21 @@ fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"
     } else {
         colvars <- data.frame(rep(as.character(f[[2]]), nrow(m)))
         names(colvars) <- as.character(f[[2]])
+        if (!is.null(xlabel <- attr(x, "label"))) {
+            colvars[,1] <- xlabel
+        }
         if (missing(lab)) {
             lab <- NULL
         }
     }
 
-    fable.numeric(x, rowvars, colvars, render=render, expand.along=expand.along, collapse.cells=collapse.cells, lab=lab, ...)
+    fable.numeric(x, rowvars, colvars, render=render, expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, lab=lab, standalone=standalone, ...)
 }
 
 #' @describeIn fable The \code{numeric} method.
 #' @export
 #' @importFrom stats setNames ftable
-fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows", "columns"), collapse.cells=TRUE, lab) {
+fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
 
     expand.along <- match.arg(expand.along)
 
@@ -203,13 +206,13 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows
     attributes(counts) <- a
     attributes(text) <- a
 
-    fable.ftable(counts, text=text, collapse.cells=collapse.cells, lab=lab)
+    fable.ftable(counts, text=text, drop=drop, collapse.cells=collapse.cells, lab=lab, standalone=standalone)
 }
 
 #' @describeIn fable The \code{ftable} method.
 #' @export
 #' @importFrom stats ftable
-fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress")), ...) {
+fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
     if (missing(lab)) {
         lab <- NULL
     }
