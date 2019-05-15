@@ -52,6 +52,8 @@ render.npct <- function(x, pct, .default="") {
 #' @param rowvars A list of row variables for splitting the data.
 #' @param colvars A list of column variables for splitting the data.
 #' @param render A function to render the contents of each cell to character data.
+#' @param lab Specify the contents of an extra table cell spanning
+#' over all column labels.
 #' @param expand.along Specify the direction to expand the table when render
 #' returns a (named) vector.
 #' @param text A character matrix containing the textual content of each table cell.
@@ -59,10 +61,11 @@ render.npct <- function(x, pct, .default="") {
 #' will be dropped.
 #' @param collapse.cells If \code{TRUE} (the default), row/column header cells
 #' will be collapsed (merged) where appropriate.
-#' @param lab Specify the contents of an extra table cell spanning
-#' over all column labels.
-#' @param standalone If true, a standalone document containing the table output
-#' is generated displayed in the default viewer/browser. If false, generated
+#' @param row.names If \code{TRUE} (the default), row names will be shown in the
+#' first column of the table. Set to \code{FALSE} to suppress row names.
+#' Only applies when displaying whole \code{data.frame}.
+#' @param standalone If \code{TRUE}, a standalone document containing the table output
+#' is generated displayed in the default viewer/browser. If \code{FALSE}, generated
 #' HTML is output to the console.
 #' @param ... Additional arguments passed to \code{render}.
 #' @return None (invisible \code{NULL}). Called for its side effects.
@@ -101,7 +104,10 @@ fable <- function(x, ...) {
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+fable.data.frame <- function(x, value, facets, ..., render, lab,
+    expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
+    collapse.cells=TRUE, row.names=T, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+
     if (missing(value) && missing(facets)) {
         value <- unlist(as.list(format(x)))
         eg <- expand.grid(rownames(x), colnames(x))
@@ -112,28 +118,34 @@ fable.data.frame <- function(x, value, facets, ..., render, expand.along=c("rows
         } else {
             names(rowvars) <- lab # In this case use lab for row label header instead
         }
-        lab <- NULL
+        lab <- 0 # Special value
+        attr(lab, ".suppressrowlabels") <- !row.names
     } else if (missing(value)) {
         stop("Cannot specify facets without value")
     } else if (missing(facets)) {
         stop("Cannot specify values without facets")
         f <- . ~ .
     } else {
-        value <- eval(substitute(value), x)
+        value <- eval(substitute(value), x, enclos=parent.frame())
         f <- Formula(facets)
         m <- model.frame(f, data=x, na.action=na.pass)
         rowvars <- model.part(f, data=m, lhs=1, drop=F)
         colvars <- model.part(f, data=m, rhs=1, drop=F)
     }
 
-    fable.numeric(value, rowvars, colvars, render=render, expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, lab=lab, standalone=standalone, ...)
+    fable.numeric(value, rowvars, colvars, render=render, lab=lab,
+        expand.along=expand.along, drop=drop, collapse.cells=collapse.cells,
+        standalone=standalone, ...)
 }
 
 #' @describeIn fable The \code{formula} method.
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+fable.formula <- function(x, data, ..., render, lab,
+    expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
+    collapse.cells=TRUE, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+
     f <- Formula(x)
     m <- model.frame(f, data=data, na.action=na.pass)
     x <- model.part(f, data=m, lhs=1, drop=T)
@@ -151,13 +163,17 @@ fable.formula <- function(x, data, ..., render, expand.along=c("rows", "columns"
         }
     }
 
-    fable.numeric(x, rowvars, colvars, render=render, expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, lab=lab, standalone=standalone, ...)
+    fable.numeric(x, rowvars, colvars, render=render, lab=lab,
+        expand.along=expand.along, drop=drop, collapse.cells=collapse.cells,
+        standalone=standalone, ...)
 }
 
 #' @describeIn fable The \code{numeric} method.
 #' @export
 #' @importFrom stats setNames ftable
-fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+fable.numeric <- function(x, rowvars, colvars, ..., render, lab,
+    expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
+    collapse.cells=TRUE, standalone=!isTRUE(getOption("knitr.in.progress"))) {
 
     expand.along <- match.arg(expand.along)
 
@@ -183,9 +199,9 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows
         }
     }
     if (expand.along == "rows") {
-        text <- lapply(split(x, c(rev(rowvars), rev(colvars))), render, ...)
+        text <- lapply(split(unname(x), c(rev(rowvars), rev(colvars))), render, ...)
     } else {
-        text <- lapply(split(x, c(rev(colvars), rev(rowvars))), render, ...)
+        text <- lapply(split(unname(x), c(rev(colvars), rev(rowvars))), render, ...)
     }
     stats <- names(text[[1]])
     nstats <- length(stats)
@@ -210,13 +226,17 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, expand.along=c("rows
     attributes(counts) <- a
     attributes(text) <- a
 
-    fable.ftable(counts, text=text, drop=drop, collapse.cells=collapse.cells, lab=lab, standalone=standalone)
+    fable.ftable(counts, text=text, lab=lab, drop=drop,
+        collapse.cells=collapse.cells, standalone=standalone)
 }
 
 #' @describeIn fable The \code{ftable} method.
 #' @export
 #' @importFrom stats ftable
-fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), ..., lab,
+    drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE,
+    standalone=!isTRUE(getOption("knitr.in.progress"))) {
+
     if (missing(lab)) {
         lab <- NULL
     }
@@ -233,18 +253,18 @@ fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), drop=c("both"
             .fable.ftable.internal(
                 x              = x,
                 text           = text,
+                lab            = lab,
                 drop           = drop,
-                collapse.cells = collapse.cells,
-                lab            = lab))
+                collapse.cells = collapse.cells))
         cat(file=html.file, append=TRUE, html.standalone.foot.ez)
         viewer(html.file)
     } else {
         .fable.ftable.internal(
             x              = x,
             text           = text,
+            lab            = lab,
             drop           = drop,
-            collapse.cells = collapse.cells,
-            lab            = lab)
+            collapse.cells = collapse.cells)
     }
 }
 
@@ -307,7 +327,8 @@ html.standalone.foot.ez <- '
 '
 
 
-.fable.ftable.internal <- function(x, text=matrix(as.character(x), nrow(x)), drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, lab) {
+.fable.ftable.internal <- function(x, text=matrix(as.character(x), nrow(x)), lab,
+    drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, .suppressrowlabels=F) {
 
     if (!inherits(x, "ftable")) stop("'x' must be an \"ftable\" object")
     if (!all.equal(dim(x), dim(text))) stop("'x' and 'text' must be have the same dimensions")
@@ -393,12 +414,18 @@ html.standalone.foot.ez <- '
 
 
     if (!missing(lab) & !is.null(lab)) {
-        span <- ncol(text)
-        sp <- if (span > 1) sprintf(" colspan=\"%d\"", span) else ""
-        cl <- " class=\"lab\""
-        td <- "th"
-        tags <- paste0("<", td, sp, cl, ">", lab, "</", td, ">\n")
-        cltags <- c(tags, cltags)
+        if (is.character(lab)) {
+            span <- ncol(text)
+            sp <- if (span > 1) sprintf(" colspan=\"%d\"", span) else ""
+            cl <- " class=\"lab\""
+            td <- "th"
+            tags <- paste0("<", td, sp, cl, ">", lab, "</", td, ">\n")
+            cltags <- c(tags, cltags)
+        }
+        .suppressrowlabels <- attr(lab, ".suppressrowlabels")
+        if (is.null(.suppressrowlabels)) {
+            .suppressrowlabels <- FALSE
+        }
     }
 
     rlhtags <- makeRowLabelHeadTags(names(xrv), length(cltags))
@@ -406,7 +433,7 @@ html.standalone.foot.ez <- '
     cat("<table>\n")
     for (i in seq_along(cltags)) {
         tags <- cltags[[i]]
-        if (i == 1) {
+        if (i == 1 && !.suppressrowlabels) {
             for (j in rev(seq_along(rlhtags))) {
                 tags <- c(rlhtags[j], tags)
             }
@@ -419,8 +446,10 @@ html.standalone.foot.ez <- '
     for (i in 1:nrow(dat)) {
         td <- "td"
         tags <- paste0("<", td, ">", dat[i,], "</", td, ">\n")
-        for (j in rev(seq_along(rltags))) {
-            tags <- c(rltags[[j]][i], tags)
+        if (!.suppressrowlabels) {
+            for (j in rev(seq_along(rltags))) {
+                tags <- c(rltags[[j]][i], tags)
+            }
         }
         cat(paste0("<tr>\n", paste0(tags, collapse=""), "</tr>\n", collapse=""))
     }

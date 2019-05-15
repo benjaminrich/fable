@@ -10,24 +10,25 @@
 \usage{
 fable(x, ...)
 
-\method{fable}{data.frame}(x, value, facets, ..., render,
+\method{fable}{data.frame}(x, value, facets, ..., render, lab,
   expand.along = c("rows", "columns"), drop = c("both", "rows",
-  "columns", "none"), collapse.cells = TRUE, lab,
+  "columns", "none"), collapse.cells = TRUE, row.names = T,
   standalone = !isTRUE(getOption("knitr.in.progress")))
 
-\method{fable}{formula}(x, data, ..., render, expand.along = c("rows",
-  "columns"), drop = c("both", "rows", "columns", "none"),
-  collapse.cells = TRUE, lab,
-  standalone = !isTRUE(getOption("knitr.in.progress")))
-
-\method{fable}{numeric}(x, rowvars, colvars, ..., render,
+\method{fable}{formula}(x, data, ..., render, lab,
   expand.along = c("rows", "columns"), drop = c("both", "rows",
-  "columns", "none"), collapse.cells = TRUE, lab,
+  "columns", "none"), collapse.cells = TRUE,
   standalone = !isTRUE(getOption("knitr.in.progress")))
 
-\method{fable}{ftable}(x, text = matrix(as.character(x), nrow(x)),
-  drop = c("both", "rows", "columns", "none"), collapse.cells = TRUE,
-  lab, standalone = !isTRUE(getOption("knitr.in.progress")))
+\method{fable}{numeric}(x, rowvars, colvars, ..., render, lab,
+  expand.along = c("rows", "columns"), drop = c("both", "rows",
+  "columns", "none"), collapse.cells = TRUE,
+  standalone = !isTRUE(getOption("knitr.in.progress")))
+
+\method{fable}{ftable}(x, text = matrix(as.character(x), nrow(x)), ...,
+  lab, drop = c("both", "rows", "columns", "none"),
+  collapse.cells = TRUE,
+  standalone = !isTRUE(getOption("knitr.in.progress")))
 }
 \arguments{
 \item{x}{An object.}
@@ -42,6 +43,9 @@ splitting the data.}
 
 \item{render}{A function to render the contents of each cell to character data.}
 
+\item{lab}{Specify the contents of an extra table cell spanning
+over all column labels.}
+
 \item{expand.along}{Specify the direction to expand the table when render
 returns a (named) vector.}
 
@@ -51,11 +55,12 @@ will be dropped.}
 \item{collapse.cells}{If \code{TRUE} (the default), row/column header cells
 will be collapsed (merged) where appropriate.}
 
-\item{lab}{Specify the contents of an extra table cell spanning
-over all column labels.}
+\item{row.names}{If \code{TRUE} (the default), row names will be shown in the
+first column of the table. Set to \code{FALSE} to suppress row names.
+Only applies when displaying whole \code{data.frame}.}
 
-\item{standalone}{If true, a standalone document containing the table output
-is generated displayed in the default viewer/browser. If false, generated
+\item{standalone}{If \code{TRUE}, a standalone document containing the table output
+is generated displayed in the default viewer/browser. If \code{FALSE}, generated
 HTML is output to the console.}
 
 \item{data}{A data.frame.}
