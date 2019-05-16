@@ -12,23 +12,19 @@ fable(x, ...)
 
 \method{fable}{data.frame}(x, value, facets, ..., render, lab,
   expand.along = c("rows", "columns"), drop = c("both", "rows",
-  "columns", "none"), collapse.cells = TRUE, row.names = T,
-  standalone = !isTRUE(getOption("knitr.in.progress")))
+  "columns", "none"), collapse.cells = TRUE, row.names = T)
 
 \method{fable}{formula}(x, data, ..., render, lab,
   expand.along = c("rows", "columns"), drop = c("both", "rows",
-  "columns", "none"), collapse.cells = TRUE,
-  standalone = !isTRUE(getOption("knitr.in.progress")))
+  "columns", "none"), collapse.cells = TRUE)
 
 \method{fable}{numeric}(x, rowvars, colvars, ..., render, lab,
   expand.along = c("rows", "columns"), drop = c("both", "rows",
-  "columns", "none"), collapse.cells = TRUE,
-  standalone = !isTRUE(getOption("knitr.in.progress")))
+  "columns", "none"), collapse.cells = TRUE)
 
 \method{fable}{ftable}(x, text = matrix(as.character(x), nrow(x)), ...,
   lab, drop = c("both", "rows", "columns", "none"),
-  collapse.cells = TRUE,
-  standalone = !isTRUE(getOption("knitr.in.progress")))
+  collapse.cells = TRUE)
 }
 \arguments{
 \item{x}{An object.}
@@ -59,10 +55,6 @@ will be collapsed (merged) where appropriate.}
 first column of the table. Set to \code{FALSE} to suppress row names.
 Only applies when displaying whole \code{data.frame}.}
 
-\item{standalone}{If \code{TRUE}, a standalone document containing the table output
-is generated displayed in the default viewer/browser. If \code{FALSE}, generated
-HTML is output to the console.}
-
 \item{data}{A data.frame.}
 
 \item{rowvars}{A list of row variables for splitting the data.}
@@ -72,7 +64,9 @@ HTML is output to the console.}
 \item{text}{A character matrix containing the textual content of each table cell.}
 }
 \value{
-None (invisible \code{NULL}). Called for its side effects.
+A \code{character} which contains an HTML table fragment. It has
+additional class attributes that cause it to be displayed in a browser in an
+interactive context, and rendered as HTML in a \code{knitr} context.
 }
 \description{
 Creates formatted HTML tables of in a flexible, convenient way.
@@ -89,28 +83,32 @@ Creates formatted HTML tables of in a flexible, convenient way.
 }}
 
 \examples{
+# mtcars examples
 fable(mtcars)
 fable(mtcars, mpg, facets=(gear ~ cyl), lab="Cylinders")
 fable(mpg ~ gear | cyl, data=mtcars, lab="Cylinders")
 fable(rownames(mtcars) ~ gear | cyl, data=mtcars,
   render=paste, collapse="<br/>", lab="Cylinders")
 
+# OrchardSprays examples
+fable(head(OrchardSprays, 12))
+fable(head(OrchardSprays, 12), row.names=FALSE)
 fable(treatment ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
 fable(paste(treatment, decrease, sep="<br/>") ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
-r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
-fable(decrease ~ treatment, data=OrchardSprays, render=r, expand.along="rows")
-fable(decrease ~ treatment, data=OrchardSprays, render=r, expand.along="columns")
 
-r <- function(x) sprintf("\%0.3g (\%0.3g)", mean(x), sd(x))
+rndr.meansd <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
+fable(decrease ~ treatment, data=OrchardSprays, render=rndr.meansd, expand.along="rows")
+fable(decrease ~ treatment, data=OrchardSprays, render=rndr.meansd, expand.along="columns")
+
+# ToothGrowth examples
 fable(len ~ dose | supp, data=ToothGrowth, lab="Mean (SD)",
-  render=r)
-
-r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
-fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
-  render=r)
+  render=function(x) sprintf("\%0.3g (\%0.3g)", mean(x), sd(x)))
 
 fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
-  render=r, expand.along="columns")
+  render=rndr.meansd)
+
+fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
+  render=rndr.meansd, expand.along="columns")
 
 }
 \keyword{utilities}

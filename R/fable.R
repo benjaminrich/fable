@@ -64,35 +64,39 @@ render.npct <- function(x, pct, .default="") {
 #' @param row.names If \code{TRUE} (the default), row names will be shown in the
 #' first column of the table. Set to \code{FALSE} to suppress row names.
 #' Only applies when displaying whole \code{data.frame}.
-#' @param standalone If \code{TRUE}, a standalone document containing the table output
-#' is generated displayed in the default viewer/browser. If \code{FALSE}, generated
-#' HTML is output to the console.
 #' @param ... Additional arguments passed to \code{render}.
-#' @return None (invisible \code{NULL}). Called for its side effects.
+#'
+#' @return A \code{character} which contains an HTML table fragment. It has
+#' additional class attributes that cause it to be displayed in a browser in an
+#' interactive context, and rendered as HTML in a \code{knitr} context.
 #'
 #' @examples
+#' # mtcars examples
 #' fable(mtcars)
 #' fable(mtcars, mpg, facets=(gear ~ cyl), lab="Cylinders")
 #' fable(mpg ~ gear | cyl, data=mtcars, lab="Cylinders")
 #' fable(rownames(mtcars) ~ gear | cyl, data=mtcars,
 #'   render=paste, collapse="<br/>", lab="Cylinders")
 #'
+#' # OrchardSprays examples
+#' fable(head(OrchardSprays, 12))
+#' fable(head(OrchardSprays, 12), row.names=FALSE)
 #' fable(treatment ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
 #' fable(paste(treatment, decrease, sep="<br/>") ~ rowpos | colpos, data=OrchardSprays, lab="colpos")
-#' r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
-#' fable(decrease ~ treatment, data=OrchardSprays, render=r, expand.along="rows")
-#' fable(decrease ~ treatment, data=OrchardSprays, render=r, expand.along="columns")
 #'
-#' r <- function(x) sprintf("%0.3g (%0.3g)", mean(x), sd(x))
+#' rndr.meansd <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
+#' fable(decrease ~ treatment, data=OrchardSprays, render=rndr.meansd, expand.along="rows")
+#' fable(decrease ~ treatment, data=OrchardSprays, render=rndr.meansd, expand.along="columns")
+#'
+#' # ToothGrowth examples
 #' fable(len ~ dose | supp, data=ToothGrowth, lab="Mean (SD)",
-#'   render=r)
-#'
-#' r <- function(x) formatC(c(Mean=mean(x), SD=sd(x)), digits=3)
-#' fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
-#'   render=r)
+#'   render=function(x) sprintf("%0.3g (%0.3g)", mean(x), sd(x)))
 #'
 #' fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
-#'   render=r, expand.along="columns")
+#'   render=rndr.meansd)
+#'
+#' fable(len ~ dose | supp, data=ToothGrowth, lab="Supplement Type",
+#'   render=rndr.meansd, expand.along="columns")
 #'
 #' @keywords utilities
 #' @export
@@ -106,7 +110,7 @@ fable <- function(x, ...) {
 #' @importFrom Formula Formula model.part
 fable.data.frame <- function(x, value, facets, ..., render, lab,
     expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
-    collapse.cells=TRUE, row.names=T, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+    collapse.cells=TRUE, row.names=T) {
 
     if (missing(value) && missing(facets)) {
         value <- unlist(as.list(format(x)))
@@ -134,8 +138,7 @@ fable.data.frame <- function(x, value, facets, ..., render, lab,
     }
 
     fable.numeric(value, rowvars, colvars, render=render, lab=lab,
-        expand.along=expand.along, drop=drop, collapse.cells=collapse.cells,
-        standalone=standalone, ...)
+        expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, ...)
 }
 
 #' @describeIn fable The \code{formula} method.
@@ -144,7 +147,7 @@ fable.data.frame <- function(x, value, facets, ..., render, lab,
 #' @importFrom Formula Formula model.part
 fable.formula <- function(x, data, ..., render, lab,
     expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
-    collapse.cells=TRUE, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+    collapse.cells=TRUE) {
 
     f <- Formula(x)
     m <- model.frame(f, data=data, na.action=na.pass)
@@ -164,8 +167,7 @@ fable.formula <- function(x, data, ..., render, lab,
     }
 
     fable.numeric(x, rowvars, colvars, render=render, lab=lab,
-        expand.along=expand.along, drop=drop, collapse.cells=collapse.cells,
-        standalone=standalone, ...)
+        expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, ...)
 }
 
 #' @describeIn fable The \code{numeric} method.
@@ -173,7 +175,7 @@ fable.formula <- function(x, data, ..., render, lab,
 #' @importFrom stats setNames ftable
 fable.numeric <- function(x, rowvars, colvars, ..., render, lab,
     expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
-    collapse.cells=TRUE, standalone=!isTRUE(getOption("knitr.in.progress"))) {
+    collapse.cells=TRUE) {
 
     expand.along <- match.arg(expand.along)
 
@@ -226,106 +228,22 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, lab,
     attributes(counts) <- a
     attributes(text) <- a
 
-    fable.ftable(counts, text=text, lab=lab, drop=drop,
-        collapse.cells=collapse.cells, standalone=standalone)
+    fable.ftable(counts, text=text, lab=lab, drop=drop, collapse.cells=collapse.cells)
 }
 
 #' @describeIn fable The \code{ftable} method.
 #' @export
 #' @importFrom stats ftable
 fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), ..., lab,
-    drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE,
-    standalone=!isTRUE(getOption("knitr.in.progress"))) {
+    drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE) {
 
-    if (missing(lab)) {
-        lab <- NULL
-    }
-    if (standalone) {
-        viewer <- getOption("viewer")
-        if (is.null(viewer)) {
-            viewer <- utils::browseURL
-        }
-        dir <- tempfile()
-        dir.create(dir)
-        html.file <- file.path(dir, "fable.html")
-        cat(file=html.file, append=TRUE, html.standalone.head.ez)
-        utils::capture.output(file=html.file, append=TRUE,
-            .fable.ftable.internal(
-                x              = x,
-                text           = text,
-                lab            = lab,
-                drop           = drop,
-                collapse.cells = collapse.cells))
-        cat(file=html.file, append=TRUE, html.standalone.foot.ez)
-        viewer(html.file)
-    } else {
-        .fable.ftable.internal(
-            x              = x,
-            text           = text,
-            lab            = lab,
-            drop           = drop,
-            collapse.cells = collapse.cells)
-    }
+    .fable.ftable.internal(
+        x              = x,
+        text           = text,
+        lab            = lab,
+        drop           = drop,
+        collapse.cells = collapse.cells)
 }
-
-html.standalone.head.ez <- '
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
-<head>
-<meta charset="utf-8">
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="fable" />
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>fable Output</title>
-<style type="text/css">
-table {
-    font-family: "Times New Roman", Times, serif;
-    font-size: 9pt;
-    border-collapse: collapse;
-    padding: 0px;
-    margin: 0px;
-}
-th {
-    background-color: #ccc;
-}
-th,  td {
-    border: 1pt solid black;
-    padding: 0.1ex 2ex;
-    text-align: center;
-    white-space:nowrap;
-}
-.rowlabel {
-    text-align: left;
-}
-.tabletitle {
-    font-family: "Times New Roman", Times, serif;
-    font-size: 12pt;
-    font-weight: bold;
-}
-
-.tablefooter {
-    font-family: "Times New Roman", Times, serif;
-    font-size: 9pt;
-}
-</style>
-</head>
-<body>
-'
-
-html.standalone.foot.ez <- '
-<!-- dynamically load mathjax for compatibility with self-contained -->
-<script>
-  (function () {
-    var script = document.createElement("script");
-    script.type = "text/javascript";
-    script.src  = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
-    document.getElementsByTagName("head")[0].appendChild(script);
-  })();
-</script>
-</body>
-</html>
-'
-
 
 .fable.ftable.internal <- function(x, text=matrix(as.character(x), nrow(x)), lab,
     drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, .suppressrowlabels=F) {
@@ -414,7 +332,9 @@ html.standalone.foot.ez <- '
 
 
     if (!missing(lab) & !is.null(lab)) {
-        if (is.character(lab)) {
+        .suppressrowlabels <- attr(lab, ".suppressrowlabels")
+        if (is.null(.suppressrowlabels)) {
+            .suppressrowlabels <- FALSE
             span <- ncol(text)
             sp <- if (span > 1) sprintf(" colspan=\"%d\"", span) else ""
             cl <- " class=\"lab\""
@@ -422,28 +342,23 @@ html.standalone.foot.ez <- '
             tags <- paste0("<", td, sp, cl, ">", lab, "</", td, ">\n")
             cltags <- c(tags, cltags)
         }
-        .suppressrowlabels <- attr(lab, ".suppressrowlabels")
-        if (is.null(.suppressrowlabels)) {
-            .suppressrowlabels <- FALSE
-        }
     }
 
     rlhtags <- makeRowLabelHeadTags(names(xrv), length(cltags))
 
-    cat("<table>\n")
-    for (i in seq_along(cltags)) {
+    thead <- lapply(seq_along(cltags), function(i) {
         tags <- cltags[[i]]
         if (i == 1 && !.suppressrowlabels) {
             for (j in rev(seq_along(rlhtags))) {
                 tags <- c(rlhtags[j], tags)
             }
         }
-        cat(paste0("<tr>\n", paste0(tags, collapse=""), "</tr>\n", collapse=""))
-    }
+        paste0("<tr>\n", paste0(tags, collapse=""), "</tr>\n", collapse="")
+    })
 
     dat <- as.matrix(text)
 
-    for (i in 1:nrow(dat)) {
+    tbody <- lapply(seq_len(nrow(dat)), function(i) {
         td <- "td"
         tags <- paste0("<", td, ">", dat[i,], "</", td, ">\n")
         if (!.suppressrowlabels) {
@@ -451,9 +366,60 @@ html.standalone.foot.ez <- '
                 tags <- c(rltags[[j]][i], tags)
             }
         }
-        cat(paste0("<tr>\n", paste0(tags, collapse=""), "</tr>\n", collapse=""))
-    }
-    cat("</table>\n")
+        paste0("<tr>\n", paste0(tags, collapse=""), "</tr>\n", collapse="")
+    })
+
+    x <- paste0(
+        "<table>\n",
+        paste0(thead, collapse=""),
+        paste0(tbody, collapse=""),
+        "</table>\n")
+
+    structure(x, class=c("fable", "html", "character"), html=TRUE)
 }
 
+#' Print \code{fable} object.
+#' @param x An object returned by \code{\link{fable}}.
+#' @param ... Further arguments passed on to other \code{print} methods.
+#' @return Returns \code{x} invisibly.
+#' @details In an interactive context, the rendered table will be displayed in
+#' a web browser. Otherwise, the HTML code will be printed as text.
+#' @export
+print.fable <- function(x, ...) {
+    if (interactive()) {
+        z <- htmltools::HTML(x)
+        default.style <- htmltools::htmlDependency("fable", "1.0",
+            src=system.file(package="fable", "fable_defaults_1.0"),
+            stylesheet="fable_defaults.css")
+        z <- htmltools::div(class="Rfable", default.style, z)
+        z <- htmltools::browsable(z)
+        print(z, ...) # Calls htmltools:::print.html(z, ...)
+    } else {
+        cat(x)
+    }
+    invisible(x)
+}
+
+
+#' Method for printing in a \code{knitr} context.
+#' @param x An object returned by \code{\link{fable}}.
+#' @param ... Further arguments passed on to \code{knitr::knit_print}.
+#' @importFrom knitr knit_print
+#' @export
+knit_print.fable <- function(x, ...) {
+    knit_to_html <-
+        !is.null(knitr::opts_knit$get("rmarkdown.pandoc.to")) &&
+        grepl("^html", knitr::opts_knit$get("rmarkdown.pandoc.to"))
+
+    if (knit_to_html) {
+        z <- htmltools::HTML(x)
+        default.style <- htmltools::htmlDependency("fable", "1.0",
+            src=system.file(package="fable", "fable_defaults_1.0"),
+            stylesheet="fable_defaults.css")
+        z <- htmltools::div(class="Rfable", default.style, z)
+        knitr::knit_print(z, ...)
+    } else {
+        knitr::knit_print(as.character(x), ...)
+    }
+}
 
