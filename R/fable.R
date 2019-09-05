@@ -225,6 +225,7 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, lab, footnote,
             counts <- counts[,rep(seq_len(ncol(counts)), each=nstats), drop=F]
             a$col.vars <- c(a$col.vars, setNames(list(stats), "Statistic"))
         }
+        counts[is.na(text)] <- 0
     }
     a$dim <- dim(counts)
     attributes(counts) <- a
