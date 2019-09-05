@@ -39,7 +39,7 @@ render.npct <- function(x, pct, .default="") {
 }
 
 
-#' The mythical formatted table generator.
+#' Formatted tables the easy way.
 #'
 #' Creates formatted HTML tables of in a flexible, convenient way.
 #'
@@ -54,6 +54,8 @@ render.npct <- function(x, pct, .default="") {
 #' @param render A function to render the contents of each cell to character data.
 #' @param lab Specify the contents of an extra table cell spanning
 #' over all column labels.
+#' @param footnote A character string to be added as a footnote to the table.
+#' The default is to omit the footnote.
 #' @param expand.along Specify the direction to expand the table when render
 #' returns a (named) vector.
 #' @param text A character matrix containing the textual content of each table cell.
@@ -108,7 +110,7 @@ fable <- function(x, ...) {
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.data.frame <- function(x, value, facets, ..., render, lab,
+fable.data.frame <- function(x, value, facets, ..., render, lab, footnote,
     expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
     collapse.cells=TRUE, row.names=T) {
 
@@ -137,7 +139,7 @@ fable.data.frame <- function(x, value, facets, ..., render, lab,
         colvars <- model.part(f, data=m, rhs=1, drop=F)
     }
 
-    fable.numeric(value, rowvars, colvars, render=render, lab=lab,
+    fable.numeric(value, rowvars, colvars, render=render, lab=lab, footnote=footnote,
         expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, ...)
 }
 
@@ -145,7 +147,7 @@ fable.data.frame <- function(x, value, facets, ..., render, lab,
 #' @export
 #' @importFrom stats formula model.frame na.pass
 #' @importFrom Formula Formula model.part
-fable.formula <- function(x, data, ..., render, lab,
+fable.formula <- function(x, data, ..., render, lab, footnote,
     expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
     collapse.cells=TRUE) {
 
@@ -166,14 +168,14 @@ fable.formula <- function(x, data, ..., render, lab,
         }
     }
 
-    fable.numeric(x, rowvars, colvars, render=render, lab=lab,
+    fable.numeric(x, rowvars, colvars, render=render, lab=lab, footnote=footnote,
         expand.along=expand.along, drop=drop, collapse.cells=collapse.cells, ...)
 }
 
 #' @describeIn fable The \code{numeric} method.
 #' @export
 #' @importFrom stats setNames ftable
-fable.numeric <- function(x, rowvars, colvars, ..., render, lab,
+fable.numeric <- function(x, rowvars, colvars, ..., render, lab, footnote,
     expand.along=c("rows", "columns"), drop=c("both", "rows", "columns", "none"),
     collapse.cells=TRUE) {
 
@@ -228,24 +230,25 @@ fable.numeric <- function(x, rowvars, colvars, ..., render, lab,
     attributes(counts) <- a
     attributes(text) <- a
 
-    fable.ftable(counts, text=text, lab=lab, drop=drop, collapse.cells=collapse.cells)
+    fable.ftable(counts, text=text, lab=lab, footnote=footnote, drop=drop, collapse.cells=collapse.cells)
 }
 
 #' @describeIn fable The \code{ftable} method.
 #' @export
 #' @importFrom stats ftable
-fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), ..., lab,
+fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), ..., lab, footnote,
     drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE) {
 
     .fable.ftable.internal(
         x              = x,
         text           = text,
         lab            = lab,
+        footnote       = footnote,
         drop           = drop,
         collapse.cells = collapse.cells)
 }
 
-.fable.ftable.internal <- function(x, text=matrix(as.character(x), nrow(x)), lab,
+.fable.ftable.internal <- function(x, text=matrix(as.character(x), nrow(x)), lab, footnote,
     drop=c("both", "rows", "columns", "none"), collapse.cells=TRUE, .suppressrowlabels=F) {
 
     if (!inherits(x, "ftable")) stop("'x' must be an \"ftable\" object")
@@ -331,7 +334,7 @@ fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), ..., lab,
     }
 
 
-    if (!missing(lab) & !is.null(lab)) {
+    if (!missing(lab) && !is.null(lab)) {
         .suppressrowlabels <- attr(lab, ".suppressrowlabels")
         if (is.null(.suppressrowlabels)) {
             .suppressrowlabels <- FALSE
@@ -374,6 +377,11 @@ fable.ftable <- function(x, text=matrix(as.character(x), nrow(x)), ..., lab,
         paste0(thead, collapse=""),
         paste0(tbody, collapse=""),
         "</table>\n")
+
+    if (!missing(footnote) && !is.null(footnote)) {
+        footnote <- sprintf('<p class="tablefooter">%s</p>\n', footnote)
+        x <- paste0(x, footnote)
+    }
 
     structure(x, class=c("fable", "html", "character"), html=TRUE)
 }

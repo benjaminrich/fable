@@ -1,9 +1,11 @@
 Package: fable
 Type: Package
-Version: 0.3
-Date: 2019-05-16
-Title: The mythical formatted table generator
+Version: 0.4
+Date: 2019-09-05
+Title: Formatted tables the easy way
 Authors@R: person("Benjamin", "Rich", role=c("aut", "cre"), email="mail@benjaminrich.net")
+URL: https://github.com/benjaminrich/fable
+BugReports: https://github.com/benjaminrich/fable/issues
 Description: Creates formatted HTML tables of in a flexible, convenient way.
 License: GPL-3
 Imports: stats,Formula,knitr,htmltools
