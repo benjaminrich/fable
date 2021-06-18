@@ -1,3 +1,5 @@
+**DEPRECATED: you probably want the new [`ttt`](https://github.com/benjaminrich/ttt) package instead.**
+
 # fable - an R package
 
 fa·ble
